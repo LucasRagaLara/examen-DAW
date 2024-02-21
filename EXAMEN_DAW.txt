@@ -1,0 +1,104 @@
+link githubs
+https://github.com/LucasRagaLara/examen-DAW
+https://github.com/LucasRagaLara/examen_dwes
+
+link de render
+https://examen-dwes-6fw1.onrender.com
+
+NETPLAN NGINX
+
+network:
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      addresses: [192.168.1.200/24]
+      gateway4: 192.168.1.1
+      nameservers:
+       addresses: [8.8.4.4, 1.1.1.1]
+  version: 2
+
+
+NETPLAN NODO 1
+
+network:
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      addresses: [192.168.1.201/24]
+      gateway4: 192.168.1.1
+      nameservers:
+       addresses: [8.8.4.4, 1.1.1.1]
+  version: 2
+
+NETPLAN NODO 2
+
+network:
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      addresses: [192.168.1.202/24]
+      gateway4: 192.168.1.1
+      nameservers:
+       addresses: [8.8.4.4, 1.1.1.1]
+  version: 2
+
+
+CONFIGURACIÓN NGINx
+
+upstream prueba{
+        server 192.168.1.201:5000;
+        server 192.168.1.202:5000;
+}
+
+server {
+        listen 80;
+        listen [::]:80;
+
+        root /var/www/html;
+
+        # Add index.php to the list if you are using PHP
+        index index.html index.htm index.nginx-debian.html;
+
+        server_name 192.168.1.200;
+
+        location / {
+                proxy_pass http://prueba;
+                # First attempt to serve request as file, then
+                # as directory, then fall back to displaying a 404.
+                try_files $uri $uri/ =404;
+        }
+}
+
+CONFIGURACION NODO 1 FLASK
+
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+
+def index():
+        return "HOla mundo desde el nodo 1"
+if __name__ == '__main__':
+        app.run(debug=True, host='0.0.0.0', port=5000)
+
+CONFIGURACION NODO 2 FLASK
+
+from flask import Flask
+
+app = Flask(__name__)
+
+@app.route('/')
+
+def index():
+        return "HOla mundo desde el nodo 2"
+if __name__ == '__main__':
+        app.run(debug=True, host='0.0.0.0', port=5000)
+
+CONFIGURACION SUPERVISOR NODOS
+
+[program:myapp]
+command=/home/myapp/app/bin/gunicorn -b 0.0.0.0:5000 nodo1:app
+directory=/home/myapp
+autostart=true
+autorestart=true
